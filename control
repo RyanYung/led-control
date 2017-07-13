@@ -1,0 +1,81 @@
+#define REDPIN 5   
+#define GREENPIN 6
+#define BLUEPIN 3
+#define SOUNDPIN 7
+
+class Color 
+{
+    byte redVal;
+    byte greenVal;
+    byte blueVal;
+
+public:
+Color(byte red, byte green, byte blue)
+{
+  redVal = red;
+  greenVal = green;
+  blueVal = blue;
+}
+
+byte getRed(){
+  return redVal;
+}
+
+byte getGreen(){
+  return greenVal;
+}
+
+byte getBlue(){
+  return blueVal;
+}
+  
+
+};
+
+
+
+
+
+
+void setup()
+{
+  pinMode(SOUNDPIN, INPUT); //SIG of the Parallax Sound Impact Sensor connected to Digital Pin 7 
+  pinMode(REDPIN, OUTPUT);
+  pinMode(GREENPIN, OUTPUT);
+  pinMode(BLUEPIN, OUTPUT);
+  
+  Color red = new Color(255,0,0);
+  Color orange = new Color(255,128,0);
+  Color yellow = new Color(255,255,0);
+  Color lightGreen = new Color(128,255,0);
+  Color green = new Color(0,255,0);
+  Color blueGreen = new Color(0,255,128);
+  Color cyan = new Color(0,255,255);
+  Color lightBlue = new Color(0,128,255);
+  Color blue = new Color(0,0,255);
+  Color purple = new Color(128,0,255);
+  Color pink = new Color(255,0,255);
+  Color maroon = new Color(255,0,128);
+
+}
+
+void loop()
+{
+  boolean sound = digitalRead(SOUNDPIN);
+  if (sound == 1) {
+    analogWrite(BLUEPIN, blueNow);
+    analogWrite(REDPIN, redNow);
+    analogWrite(GREENPIN, greenNow);
+   //change color
+      analogWrite(BLUEPIN, blueNow);
+      analogWrite(REDPIN, redNow);
+      analogWrite(GREENPIN, greenNow);
+      delay(1); //wait one second before continuing 
+    }
+  }
+  else{ //if no sound is found turn off 
+    digitalWrite(REDPIN,0);
+    digitalWrite(GREENPIN,0);
+    digitalWrite(BLUEPIN,0);
+  }
+}
