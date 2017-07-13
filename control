@@ -1,3 +1,6 @@
+//This contains a color class for base colors
+//And manipulation methods to shift the saturation and lightness of base colors randomly
+
 #define REDPIN 5   
 #define GREENPIN 6
 #define BLUEPIN 3
@@ -30,10 +33,6 @@ byte getBlue(){
 }
 
 };
-
-
-
-
 
 
 void setup()
@@ -70,17 +69,18 @@ void setup()
 void loop()
 {
   boolean sound = digitalRead(SOUNDPIN);
-  if (sound == 1) {
+  if (sound == true) {
     colorIndex = random(0,13);
+    long colorEffect = random(1,101);
     
-    long colorShift = random(0,11);
-    if(0 <= colorShift <= 6){    
+    //Don't change the base color (50% chance of this)
+    if(1 <= colorShift <= 50){    
         analogWrite(REDPIN, rainbow[startIndex].getRed());
         analogWrite(GREENPIN, rainbow[startIndex].getGreen());
         analogWrite(BLUEPIN, rainbow[startIndex].getBlue());
     }
-    //Do a saturation change 
-    else if(colorShift == 7 || colorShift == 8){
+    //Do a saturation change (25% chance of this)
+    else if(51 <= colorShift <= 75){
         long changeVal = random(0,101);
         byte red = rainbow[colorIndex].getRed();
         byte green = rainbow[colorIndex].getGreen();
@@ -94,9 +94,8 @@ void loop()
         analogWrite(REDPIN, red);
         analogWrite(GREENPIN, green);
         analogWrite(BLUEPIN, blue);
-    
     }
-    //Do a lightness change
+    //Do a lightness change (25% chance of this)
     else{
         long changeVal = random(0-101);
         byte red = rainbow[colorIndex].getRed();
@@ -126,11 +125,7 @@ void loop()
         analogWrite(BLUEPIN, blue);
     }
     
-    analogWrite(BLUEPIN, blueNow);
-    analogWrite(REDPIN, redNow);
-    analogWrite(GREENPIN, greenNow);
     delay(1); //wait one millisecond before continuing 
-    }
   }
   
   else{ //if no sound is found turn off 
