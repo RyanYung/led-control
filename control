@@ -29,49 +29,6 @@ byte getBlue(){
   return blueVal;
 }
 
-//methods to manipulate base colors
-Color satChange(){
-  long changeVal = random(0,101);
-  byte red = redVal;
-  byte green = greenVal;
-  byte blue = greenVal;
-  if(red == 255) red -= changeVal;
-  if(green == 255) green -=changeVal;
-  if(blue == 255) blue -= changeVal;
-  if(red == 0) red += changeVal;
-  if(green == 0) green += changeVal;
-  if(blue == 0) blue += changeVal;
-  Color newColor = new Color(red,green,blue);
-  return newColor;
-}
-
-Color lightChange(){
-    long changeVal = random(0-101);
-    byte red = redVal;
-    byte green = greenVal;
-    byte blue = blueVal;
-    if(red == 255) red -= changeVal;
-    if(green == 255) green -= changeVal;
-    if(blue == 255) blue -= changeVal;
-    if(red == 0) red += changeVal;
-    if(green == 0) green += changeVal;
-    if(blue == 0) blue += changeVal;
-    long sign = random(0,2);
-    if(red == 128){
-        if(sign) red -= changeVal;
-        else red += changeVal;
-    }
-    if(green == 128){
-        if(sign) green -= changeVal;
-        else green += changeVal;
-    }
-    if(blue == 128){
-        if(sign) blue -= changeVal;
-        else blue += changeVal;
-    }
-    
-}
-
 };
 
 
@@ -103,7 +60,7 @@ void setup()
   
   Color[] rainbow = {red,orange,yellow,lightGreen,green,blueGreen,cyan,lightBlue,blue,purple,pink,maroon,white};
   
-  long startIndex = random(0,13);
+  long colorIndex = random(0,13);
   analogWrite(REDPIN, rainbow[startIndex].getRed());
   analogWrite(GREENPIN, rainbow[startIndex].getGreen());
   analogWrite(BLUEPIN, rainbow[startIndex].getBlue());
@@ -114,12 +71,61 @@ void loop()
 {
   boolean sound = digitalRead(SOUNDPIN);
   if (sound == 1) {
-    analogWrite(BLUEPIN, blueNow);
-    analogWrite(REDPIN, redNow);
-    analogWrite(GREENPIN, greenNow);
+    colorIndex = random(0,13);
     
-   //change color
-   
+    long colorShift = random(0,11);
+    if(0 <= colorShift <= 6){    
+        analogWrite(REDPIN, rainbow[startIndex].getRed());
+        analogWrite(GREENPIN, rainbow[startIndex].getGreen());
+        analogWrite(BLUEPIN, rainbow[startIndex].getBlue());
+    }
+    //Do a saturation change 
+    else if(colorShift == 7 || colorShift == 8){
+        long changeVal = random(0,101);
+        byte red = rainbow[colorIndex].getRed();
+        byte green = rainbow[colorIndex].getGreen();
+        byte blue = rainbow[colorIndex].getBlue();
+        if(red == 255) red -= changeVal;
+        if(green == 255) green -=changeVal;
+        if(blue == 255) blue -= changeVal;
+        if(red == 0) red += changeVal;
+        if(green == 0) green += changeVal;
+        if(blue == 0) blue += changeVal;
+        analogWrite(REDPIN, red);
+        analogWrite(GREENPIN, green);
+        analogWrite(BLUEPIN, blue);
+    
+    }
+    //Do a lightness change
+    else{
+        long changeVal = random(0-101);
+        byte red = rainbow[colorIndex].getRed();
+        byte green = rainbow[colorIndex].getGreen();
+        byte blue = rainbow[colorIndex].getBlue();
+        if(red == 255) red -= changeVal;
+        if(green == 255) green -= changeVal;
+        if(blue == 255) blue -= changeVal;
+        if(red == 0) red += changeVal;
+        if(green == 0) green += changeVal;
+        if(blue == 0) blue += changeVal;
+        long sign = random(0,2);
+        if(red == 128){
+            if(sign) red -= changeVal;
+            else red += changeVal;
+        }
+        if(green == 128){
+            if(sign) green -= changeVal;
+            else green += changeVal;
+        }
+        if(blue == 128){
+            if(sign) blue -= changeVal;
+            else blue += changeVal;
+        }
+        analogWrite(REDPIN, red);
+        analogWrite(GREENPIN, green);
+        analogWrite(BLUEPIN, blue);
+    }
+    
     analogWrite(BLUEPIN, blueNow);
     analogWrite(REDPIN, redNow);
     analogWrite(GREENPIN, greenNow);
