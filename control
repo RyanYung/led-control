@@ -8,7 +8,8 @@ class Color
     byte redVal;
     byte greenVal;
     byte blueVal;
-
+    
+//constructor
 public:
 Color(byte red, byte green, byte blue)
 {
@@ -17,18 +18,59 @@ Color(byte red, byte green, byte blue)
   blueVal = blue;
 }
 
+//getters
 byte getRed(){
   return redVal;
 }
-
 byte getGreen(){
   return greenVal;
 }
-
 byte getBlue(){
   return blueVal;
 }
-  
+
+//methods to manipulate base colors
+Color satChange(){
+  long changeVal = random(0,101);
+  byte red = redVal;
+  byte green = greenVal;
+  byte blue = greenVal;
+  if(red == 255) red -= changeVal;
+  if(green == 255) green -=changeVal;
+  if(blue == 255) blue -= changeVal;
+  if(red == 0) red += changeVal;
+  if(green == 0) green += changeVal;
+  if(blue == 0) blue += changeVal;
+  Color newColor = new Color(red,green,blue);
+  return newColor;
+}
+
+Color lightChange(){
+    long changeVal = random(0-101);
+    byte red = redVal;
+    byte green = greenVal;
+    byte blue = blueVal;
+    if(red == 255) red -= changeVal;
+    if(green == 255) green -= changeVal;
+    if(blue == 255) blue -= changeVal;
+    if(red == 0) red += changeVal;
+    if(green == 0) green += changeVal;
+    if(blue == 0) blue += changeVal;
+    long sign = random(0,2);
+    if(red == 128){
+        if(sign) red -= changeVal;
+        else red += changeVal;
+    }
+    if(green == 128){
+        if(sign) green -= changeVal;
+        else green += changeVal;
+    }
+    if(blue == 128){
+        if(sign) blue -= changeVal;
+        else blue += changeVal;
+    }
+    
+}
 
 };
 
@@ -44,6 +86,7 @@ void setup()
   pinMode(GREENPIN, OUTPUT);
   pinMode(BLUEPIN, OUTPUT);
   
+  //13 Primary Hues
   Color red = new Color(255,0,0);
   Color orange = new Color(255,128,0);
   Color yellow = new Color(255,255,0);
@@ -56,7 +99,15 @@ void setup()
   Color purple = new Color(128,0,255);
   Color pink = new Color(255,0,255);
   Color maroon = new Color(255,0,128);
-
+  Color white = new Color(255,255,255);
+  
+  Color[] rainbow = {red,orange,yellow,lightGreen,green,blueGreen,cyan,lightBlue,blue,purple,pink,maroon,white};
+  
+  long startIndex = random(0,13);
+  analogWrite(REDPIN, rainbow[startIndex].getRed());
+  analogWrite(GREENPIN, rainbow[startIndex].getGreen());
+  analogWrite(BLUEPIN, rainbow[startIndex].getBlue());
+  
 }
 
 void loop()
@@ -66,13 +117,16 @@ void loop()
     analogWrite(BLUEPIN, blueNow);
     analogWrite(REDPIN, redNow);
     analogWrite(GREENPIN, greenNow);
+    
    //change color
-      analogWrite(BLUEPIN, blueNow);
-      analogWrite(REDPIN, redNow);
-      analogWrite(GREENPIN, greenNow);
-      delay(1); //wait one second before continuing 
+   
+    analogWrite(BLUEPIN, blueNow);
+    analogWrite(REDPIN, redNow);
+    analogWrite(GREENPIN, greenNow);
+    delay(1); //wait one millisecond before continuing 
     }
   }
+  
   else{ //if no sound is found turn off 
     digitalWrite(REDPIN,0);
     digitalWrite(GREENPIN,0);
