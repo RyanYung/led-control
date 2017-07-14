@@ -1,5 +1,4 @@
-//This contains a color class for base colors
-//And manipulation methods to shift the saturation and lightness of base colors randomly
+//This file contains code to randomly control the change of an RGB LED light strip using a sound impact sensor
 
 #define REDPIN 5
 #define GREENPIN 6
@@ -9,6 +8,22 @@
 #define FADESTEPS 10
 #define FADERATE 5
 
+#define DELAY 5
+
+//Declare global variables
+long rainbowIndex;
+long colorEffectProb;
+long fadeProb;
+
+byte prevRed;
+byte prevGreen;
+byte prevBlue;
+
+byte newRed;
+byte newGreen;
+byte newBlue;
+
+//Define a color class to hold RGB values of each color
 class Color
 {
     byte redVal;
@@ -34,14 +49,53 @@ class Color
     byte getBlue() {
       return blueVal;
     }
+    /*Static method to fade from one color to the next
+       Parameters: r1 - new value of red, r2 - old value of red
+                   g1 - new value of green, g2 - old value of green
+                   b1 - new value of blue, b2 - old value of blue
+    */
+    static void fade(byte r1, byte r2, byte g1, byte g2, byte b1, byte b2) {
+      //Calculate step size for the fade
+      int redIncrement = (r1 - r2) / FADESTEPS;
+      int greenIncrement = (g1 - g2) / FADESTEPS;
+      int blueIncrement = (b1 - b2) / FADESTEPS;
 
-};
+      //Loop through the steps to fade from one color to the other
+      for (byte i = 0; i < FADESTEPS; i++) {
+        r2 += redIncrement;
+        g2 += greenIncrement;
+        b2 += blueIncrement;
+        analogWrite(REDPIN, r2);
+        analogWrite(GREENPIN, g2);
+        analogWrite(BLUEPIN, b2);
+        delay(FADERATE);
+      }
+      //Update the global previous color values to the most recently displayed color
+      prevRed = r1;
+      prevGreen = g1;
+      prevBlue = b1;
+    }
+    /*Static method to jump from one color to the next
+         Parameters: r - new value of red
+                     g - new value of green
+                     b - new value of blue
+    */
+    static void jump(byte r, byte g, byte b) {
+      analogWrite(REDPIN, r);
+      analogWrite(GREENPIN, g);
+      analogWrite(BLUEPIN, b);
+      //Update global variables
+      prevRed = r;
+      prevGreen = g;
+      prevBlue = b;
+    }
 
-long rainbowIndex;
-long colorEffect;
-long fade;
+}; //End class declaration
+
+//Declare array
 Color *rainbow[] = {};
 
+//Runs at the power on of the arduino, runs once
 void setup()
 {
   //Setup input and output pins
@@ -50,7 +104,7 @@ void setup()
   pinMode(GREENPIN, OUTPUT);
   pinMode(BLUEPIN, OUTPUT);
 
-  //13 Primary Hues
+  //Create the 13 Primary Hues which all other colors will be based off of.
   Color* red = new Color(255, 0, 0);
   Color* orange = new Color(255, 128, 0);
   Color* yellow = new Color(255, 255, 0);
@@ -68,108 +122,115 @@ void setup()
   //Create array of all the colors
   Color *rainbow[] = {red, orange, yellow, lightGreen, green, blueGreen, cyan, lightBlue, blue, purple, pink, maroon, white};
 
+  //Randomly pick an index of the rainbow to start with
   rainbowIndex = random(0, 13);
-  analogWrite(REDPIN, rainbow[rainbowIndex]->getRed());
-  analogWrite(GREENPIN, rainbow[rainbowIndex]->getGreen());
-  analogWrite(BLUEPIN, rainbow[rainbowIndex]->getBlue());
+
+  //Save the initial color values to the global variables
+  prevRed = rainbow[rainbowIndex]->getRed();
+  prevGreen = rainbow[rainbowIndex]->getGreen();
+  prevBlue = rainbow[rainbowIndex]->getBlue();
+
+  //Display that color to the LED strip
+  analogWrite(REDPIN, prevRed);
+  analogWrite(GREENPIN, prevGreen);
+  analogWrite(BLUEPIN, prevBlue);
 
 }
 
+//Repeating method which runs continuously until the arduino is powered off
 void loop()
 {
+  //Value which determines if the sound is on or off
   boolean sound = digitalRead(SOUNDPIN);
+  //If the sensor registers sound
   if (sound == true) {
-    byte prevRed = rainbow[rainbowIndex]->getRed();
-    byte prevGreen = rainbow[rainbowIndex]->getGreen();
-    byte prevBlue = rainbow[rainbowIndex]->getBlue();
-
+    //Generate new random value for the next color, which color effect, and the fade transition
     rainbowIndex = random(0, 13);
-    colorEffect = random(1, 101);
-    fade = random(1, 101);
+    colorEffectProb = random(1, 101);
+    fadeProb = random(1, 101);
+    
+    //Update global variables
+    newRed = rainbow[rainbowIndex]->getRed();
+    newGreen = rainbow[rainbowIndex]->getGreen();
+    newBlue = rainbow[rainbowIndex]->getBlue();
 
-    //Don't change the base color (50% chance of this)
-    if (1 <= colorEffect <= 50) {
-      //Determines a fade transition between the old color and new color
-      if (1 <= fade <= 50) {
-        byte currRed = rainbow[rainbowIndex]->getRed();
-        byte currGreen = rainbow[rainbowIndex]->getGreen();
-        byte currBlue = rainbow[rainbowIndex]->getBlue();
-
-        int redIncrement = (currRed - prevRed) / FADESTEPS;
-        int greenIncrement = (currGreen - prevGreen) / FADESTEPS;
-        int blueIncrement = (currBlue - prevBlue) / FADESTEPS;
-
-        for (byte i = 0; i < FADESTEPS; i++) {
-          prevRed += redIncrement;
-          prevGreen += greenIncrement;
-          prevBlue += blueIncrement;
-          analogWrite(REDPIN, prevRed);
-          analogWrite(GREENPIN, prevGreen);
-          analogWrite(BLUEPIN, prevBlue);
-          delay(FADERATE);
-        }
+    //Original base color (50% chance)
+    if (1 <= colorEffectProb <= 50) {
+      //Fade transition (50% chance)
+      if (1 <= fadeProb <= 50) {
+        Color::fade(newRed, prevRed, newGreen, prevGreen, newBlue, prevBlue);
       }
-      //Jumps the color to the new one
+      //Jump transition (50% chance)
       else {
-        analogWrite(REDPIN, rainbow[rainbowIndex]->getRed());
-        analogWrite(GREENPIN, rainbow[rainbowIndex]->getGreen());
-        analogWrite(BLUEPIN, rainbow[rainbowIndex]->getBlue());
+        Color::jump(newRed, newGreen, newBlue);
       }
     }
-    //Do a saturation change (25% chance of this)
-    else if (51 <= colorEffect <= 75) {
+
+    //Saturation change to base color(25% chance)
+    else if (51 <= colorEffectProb <= 75) {
+      //calculate random amount of color shift
       long changeVal = random(0, 101);
-      byte newRed = rainbow[rainbowIndex]->getRed();
-      byte newGreen = rainbow[rainbowIndex]->getGreen();
-      byte newBlue = rainbow[rainbowIndex]->getBlue();
+
+      //Change values
       if (newRed == 255) newRed -= changeVal;
       if (newGreen == 255) newGreen -= changeVal;
       if (newBlue == 255) newBlue -= changeVal;
-      if (red == 0) red += changeVal;
-      if (green == 0) green += changeVal;
-      if (blue == 0) blue += changeVal;
-      
-      if(1 <= fade <= 50){
-        
+      if (newRed == 0) newRed += changeVal;
+      if (newGreen == 0) newGreen += changeVal;
+      if (newBlue == 0) newBlue += changeVal;
+
+      //Fade transition (50% chance)
+      if (1 <= fadeProb <= 50) {
+        Color::fade(newRed, prevRed, newGreen, prevGreen, newBlue, prevBlue);
       }
-      analogWrite(REDPIN, red);
-      analogWrite(GREENPIN, green);
-      analogWrite(BLUEPIN, blue);
-    }
-    //Do a lightness change (25% chance of this)
-    else {
-      long changeVal = random(0, 101);
-      byte red = rainbow[rainbowIndex]->getRed();
-      byte green = rainbow[rainbowIndex]->getGreen();
-      byte blue = rainbow[rainbowIndex]->getBlue();
-      if (red == 255) red -= changeVal;
-      if (green == 255) green -= changeVal;
-      if (blue == 255) blue -= changeVal;
-      if (red == 0) red += changeVal;
-      if (green == 0) green += changeVal;
-      if (blue == 0) blue += changeVal;
-      long sign = random(0, 2);
-      if (red == 128) {
-        if (sign) red -= changeVal;
-        else red += changeVal;
+      //Jump transition (50% chance)
+      else {
+        Color::jump(newRed, newGreen, newBlue);
       }
-      if (green == 128) {
-        if (sign) green -= changeVal;
-        else green += changeVal;
-      }
-      if (blue == 128) {
-        if (sign) blue -= changeVal;
-        else blue += changeVal;
-      }
-      analogWrite(REDPIN, red);
-      analogWrite(GREENPIN, green);
-      analogWrite(BLUEPIN, blue);
     }
 
-    delay(1); //wait one millisecond before continuing
+    //Lightness chance to base color (25% chance)
+    else {
+      //calculate random amount of color shift
+      long changeVal = random(0, 101);
+      //calculate direction of shift, up or down
+      long sign = random(0, 2);
+
+      //Change color values
+      if (newRed == 255) newRed -= changeVal;
+      if (newGreen == 255) newGreen -= changeVal;
+      if (newBlue == 255) newBlue -= changeVal;
+      if (newRed == 0) newRed += changeVal;
+      if (newGreen == 0) newGreen += changeVal;
+      if (newBlue == 0) newBlue += changeVal;
+      //More color value changes
+      if (newRed == 128) {
+        if (sign) newRed -= changeVal;
+        else newRed += changeVal;
+      }
+      if (newGreen == 128) {
+        if (sign) newGreen -= changeVal;
+        else newGreen += changeVal;
+      }
+      if (newBlue == 128) {
+        if (sign) newBlue -= changeVal;
+        else newBlue += changeVal;
+      }
+      //Fade transition (50% chance)
+      if (1 <= fadeProb <= 50) {
+        Color::fade(newRed, prevRed, newGreen, prevGreen, newBlue, prevBlue);
+      }
+      //Jump transition (50% chance)
+      else {
+        Color::jump(newRed, newGreen, newBlue);
+      }
+    }
+    //How long to wait before restarting the loop
+    delay(DELAY);
   }
 
-  else { //if no sound is found turn off
+  //Case for if there is no sound signal
+  else {
     digitalWrite(REDPIN, 0);
     digitalWrite(GREENPIN, 0);
     digitalWrite(BLUEPIN, 0);
