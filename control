@@ -1,136 +1,177 @@
 //This contains a color class for base colors
 //And manipulation methods to shift the saturation and lightness of base colors randomly
 
-#define REDPIN 5   
+#define REDPIN 5
 #define GREENPIN 6
 #define BLUEPIN 3
 #define SOUNDPIN 7
 
-class Color 
+#define FADESTEPS 10
+#define FADERATE 5
+
+class Color
 {
     byte redVal;
     byte greenVal;
     byte blueVal;
-    
-//constructor
-public:
-Color(byte red, byte green, byte blue)
-{
-  redVal = red;
-  greenVal = green;
-  blueVal = blue;
-}
 
-//getters
-byte getRed(){
-  return redVal;
-}
-byte getGreen(){
-  return greenVal;
-}
-byte getBlue(){
-  return blueVal;
-}
+    //constructor
+  public:
+    Color(byte red, byte green, byte blue)
+    {
+      redVal = red;
+      greenVal = green;
+      blueVal = blue;
+    }
+
+    //getters
+    byte getRed() {
+      return redVal;
+    }
+    byte getGreen() {
+      return greenVal;
+    }
+    byte getBlue() {
+      return blueVal;
+    }
 
 };
 
+long rainbowIndex;
+long colorEffect;
+long fade;
+Color *rainbow[] = {};
 
 void setup()
 {
-  pinMode(SOUNDPIN, INPUT); //SIG of the Parallax Sound Impact Sensor connected to Digital Pin 7 
+  //Setup input and output pins
+  pinMode(SOUNDPIN, INPUT);
   pinMode(REDPIN, OUTPUT);
   pinMode(GREENPIN, OUTPUT);
   pinMode(BLUEPIN, OUTPUT);
-  
+
   //13 Primary Hues
-  Color red = new Color(255,0,0);
-  Color orange = new Color(255,128,0);
-  Color yellow = new Color(255,255,0);
-  Color lightGreen = new Color(128,255,0);
-  Color green = new Color(0,255,0);
-  Color blueGreen = new Color(0,255,128);
-  Color cyan = new Color(0,255,255);
-  Color lightBlue = new Color(0,128,255);
-  Color blue = new Color(0,0,255);
-  Color purple = new Color(128,0,255);
-  Color pink = new Color(255,0,255);
-  Color maroon = new Color(255,0,128);
-  Color white = new Color(255,255,255);
-  
-  Color[] rainbow = {red,orange,yellow,lightGreen,green,blueGreen,cyan,lightBlue,blue,purple,pink,maroon,white};
-  
-  long colorIndex = random(0,13);
-  analogWrite(REDPIN, rainbow[startIndex].getRed());
-  analogWrite(GREENPIN, rainbow[startIndex].getGreen());
-  analogWrite(BLUEPIN, rainbow[startIndex].getBlue());
-  
+  Color* red = new Color(255, 0, 0);
+  Color* orange = new Color(255, 128, 0);
+  Color* yellow = new Color(255, 255, 0);
+  Color* lightGreen = new Color(128, 255, 0);
+  Color* green = new Color(0, 255, 0);
+  Color* blueGreen = new Color(0, 255, 128);
+  Color* cyan = new Color(0, 255, 255);
+  Color* lightBlue = new Color(0, 128, 255);
+  Color* blue = new Color(0, 0, 255);
+  Color* purple = new Color(128, 0, 255);
+  Color* pink = new Color(255, 0, 255);
+  Color* maroon = new Color(255, 0, 128);
+  Color* white = new Color(255, 255, 255);
+
+  //Create array of all the colors
+  Color *rainbow[] = {red, orange, yellow, lightGreen, green, blueGreen, cyan, lightBlue, blue, purple, pink, maroon, white};
+
+  rainbowIndex = random(0, 13);
+  analogWrite(REDPIN, rainbow[rainbowIndex]->getRed());
+  analogWrite(GREENPIN, rainbow[rainbowIndex]->getGreen());
+  analogWrite(BLUEPIN, rainbow[rainbowIndex]->getBlue());
+
 }
 
 void loop()
 {
   boolean sound = digitalRead(SOUNDPIN);
   if (sound == true) {
-    colorIndex = random(0,13);
-    long colorEffect = random(1,101);
-    
+    byte prevRed = rainbow[rainbowIndex]->getRed();
+    byte prevGreen = rainbow[rainbowIndex]->getGreen();
+    byte prevBlue = rainbow[rainbowIndex]->getBlue();
+
+    rainbowIndex = random(0, 13);
+    colorEffect = random(1, 101);
+    fade = random(1, 101);
+
     //Don't change the base color (50% chance of this)
-    if(1 <= colorShift <= 50){    
-        analogWrite(REDPIN, rainbow[startIndex].getRed());
-        analogWrite(GREENPIN, rainbow[startIndex].getGreen());
-        analogWrite(BLUEPIN, rainbow[startIndex].getBlue());
+    if (1 <= colorEffect <= 50) {
+      //Determines a fade transition between the old color and new color
+      if (1 <= fade <= 50) {
+        byte currRed = rainbow[rainbowIndex]->getRed();
+        byte currGreen = rainbow[rainbowIndex]->getGreen();
+        byte currBlue = rainbow[rainbowIndex]->getBlue();
+
+        int redIncrement = (currRed - prevRed) / FADESTEPS;
+        int greenIncrement = (currGreen - prevGreen) / FADESTEPS;
+        int blueIncrement = (currBlue - prevBlue) / FADESTEPS;
+
+        for (byte i = 0; i < FADESTEPS; i++) {
+          prevRed += redIncrement;
+          prevGreen += greenIncrement;
+          prevBlue += blueIncrement;
+          analogWrite(REDPIN, prevRed);
+          analogWrite(GREENPIN, prevGreen);
+          analogWrite(BLUEPIN, prevBlue);
+          delay(FADERATE);
+        }
+      }
+      //Jumps the color to the new one
+      else {
+        analogWrite(REDPIN, rainbow[rainbowIndex]->getRed());
+        analogWrite(GREENPIN, rainbow[rainbowIndex]->getGreen());
+        analogWrite(BLUEPIN, rainbow[rainbowIndex]->getBlue());
+      }
     }
     //Do a saturation change (25% chance of this)
-    else if(51 <= colorShift <= 75){
-        long changeVal = random(0,101);
-        byte red = rainbow[colorIndex].getRed();
-        byte green = rainbow[colorIndex].getGreen();
-        byte blue = rainbow[colorIndex].getBlue();
-        if(red == 255) red -= changeVal;
-        if(green == 255) green -=changeVal;
-        if(blue == 255) blue -= changeVal;
-        if(red == 0) red += changeVal;
-        if(green == 0) green += changeVal;
-        if(blue == 0) blue += changeVal;
-        analogWrite(REDPIN, red);
-        analogWrite(GREENPIN, green);
-        analogWrite(BLUEPIN, blue);
+    else if (51 <= colorEffect <= 75) {
+      long changeVal = random(0, 101);
+      byte newRed = rainbow[rainbowIndex]->getRed();
+      byte newGreen = rainbow[rainbowIndex]->getGreen();
+      byte newBlue = rainbow[rainbowIndex]->getBlue();
+      if (newRed == 255) newRed -= changeVal;
+      if (newGreen == 255) newGreen -= changeVal;
+      if (newBlue == 255) newBlue -= changeVal;
+      if (red == 0) red += changeVal;
+      if (green == 0) green += changeVal;
+      if (blue == 0) blue += changeVal;
+      
+      if(1 <= fade <= 50){
+        
+      }
+      analogWrite(REDPIN, red);
+      analogWrite(GREENPIN, green);
+      analogWrite(BLUEPIN, blue);
     }
     //Do a lightness change (25% chance of this)
-    else{
-        long changeVal = random(0-101);
-        byte red = rainbow[colorIndex].getRed();
-        byte green = rainbow[colorIndex].getGreen();
-        byte blue = rainbow[colorIndex].getBlue();
-        if(red == 255) red -= changeVal;
-        if(green == 255) green -= changeVal;
-        if(blue == 255) blue -= changeVal;
-        if(red == 0) red += changeVal;
-        if(green == 0) green += changeVal;
-        if(blue == 0) blue += changeVal;
-        long sign = random(0,2);
-        if(red == 128){
-            if(sign) red -= changeVal;
-            else red += changeVal;
-        }
-        if(green == 128){
-            if(sign) green -= changeVal;
-            else green += changeVal;
-        }
-        if(blue == 128){
-            if(sign) blue -= changeVal;
-            else blue += changeVal;
-        }
-        analogWrite(REDPIN, red);
-        analogWrite(GREENPIN, green);
-        analogWrite(BLUEPIN, blue);
+    else {
+      long changeVal = random(0, 101);
+      byte red = rainbow[rainbowIndex]->getRed();
+      byte green = rainbow[rainbowIndex]->getGreen();
+      byte blue = rainbow[rainbowIndex]->getBlue();
+      if (red == 255) red -= changeVal;
+      if (green == 255) green -= changeVal;
+      if (blue == 255) blue -= changeVal;
+      if (red == 0) red += changeVal;
+      if (green == 0) green += changeVal;
+      if (blue == 0) blue += changeVal;
+      long sign = random(0, 2);
+      if (red == 128) {
+        if (sign) red -= changeVal;
+        else red += changeVal;
+      }
+      if (green == 128) {
+        if (sign) green -= changeVal;
+        else green += changeVal;
+      }
+      if (blue == 128) {
+        if (sign) blue -= changeVal;
+        else blue += changeVal;
+      }
+      analogWrite(REDPIN, red);
+      analogWrite(GREENPIN, green);
+      analogWrite(BLUEPIN, blue);
     }
-    
-    delay(1); //wait one millisecond before continuing 
+
+    delay(1); //wait one millisecond before continuing
   }
-  
-  else{ //if no sound is found turn off 
-    digitalWrite(REDPIN,0);
-    digitalWrite(GREENPIN,0);
-    digitalWrite(BLUEPIN,0);
+
+  else { //if no sound is found turn off
+    digitalWrite(REDPIN, 0);
+    digitalWrite(GREENPIN, 0);
+    digitalWrite(BLUEPIN, 0);
   }
 }
