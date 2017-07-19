@@ -1,8 +1,8 @@
 //This file contains code to randomly control the change of an RGB LED light strip using a sound impact sensor
 
 //Defines the pins on the arduino to what they control
-#define REDPIN 5
-#define GREENPIN 6
+#define REDPIN 6
+#define GREENPIN 5
 #define BLUEPIN 3
 #define SOUNDPIN 7
 
@@ -10,13 +10,33 @@
 #define FADESTEPS 10 //How many incremental steps during the fade transition
 #define FADERATE 5   //Delay between each color of the fade
 
-#define FADEOUTINC 20 //Incremental decrease of brightness when no sound is registered
+#define FADEOUTINC 10 //Incremental decrease of brightness when no sound is registered
 
-#define STROBECOUNT 10  //How many times the light will strobe
-#define STROBESPEED 200 //Delay between strobes
+#define STROBECOUNT 7  //How many times the light will strobe
+#define STROBESPEED 150 //Delay between strobes
 
 #define DELAY 10 //Overll delay for the program
 
+/*  Debugging print statements
+
+      Serial.print("red is ");
+      Serial.println(r);
+      Serial.print("green is ");
+      Serial.println(g);
+      Serial.print("blue is ");
+      Serial.println(b);
+      Serial.println();
+
+      Serial.print("base color is ");
+      Serial.println(rainbow[rainbowIndex]->getName());
+      Serial.print("red is ");
+      Serial.println(newRed);
+      Serial.print("green is ");
+      Serial.println(newGreen);
+      Serial.print("blue is ");
+      Serial.println(newBlue);
+      Serial.println();
+*/
 
 //Declare global variables
 long rainbowIndex;
@@ -33,7 +53,6 @@ byte newBlue;
 
 boolean sound;
 
-
 //Define a color class to hold RGB values of each color
 class Color
 {
@@ -42,7 +61,7 @@ class Color
     byte blueVal;
     String colorName;
 
-    //constructor
+  //constructor
   public:
     Color(String nameIn, byte red, byte green, byte blue)
     {
@@ -82,16 +101,6 @@ class Color
         g2 += greenIncrement;
         b2 += blueIncrement;
 
-        /*
-          Serial.print("incremental red is ");
-          Serial.println(r2);
-          Serial.print("incremental green is ");
-          Serial.println(g2);
-          Serial.print("incremental blue is ");
-          Serial.println(b2);
-          Serial.println();
-        */
-
         analogWrite(REDPIN, r2);
         analogWrite(GREENPIN, g2);
         analogWrite(BLUEPIN, b2);
@@ -112,16 +121,6 @@ class Color
       analogWrite(GREENPIN, g);
       analogWrite(BLUEPIN, b);
 
-      /*
-        Serial.print("red is ");
-        Serial.println(r);
-        Serial.print("green is ");
-        Serial.println(g);
-        Serial.print("blue is ");
-        Serial.println(b);
-        Serial.println();
-      */
-
       //Update global variables
       prevRed = r;
       prevGreen = g;
@@ -129,11 +128,11 @@ class Color
     }
     //Static method to rapidly change colors
     static void strobe(Color* colorArray[]) {
-      //Determines which type of strobe it will be 
+      //Determines which type of strobe it will be
       byte strobeEffectValue = random(1, 101);
-      
+
       //Strobe various colors of the rainbow
-      if ( 1 <= strobeEffectValue <= 75) {
+      if ( 1 <= strobeEffectValue && strobeEffectValue <= 50) {
         for (byte i = 0; i < STROBECOUNT; i++) {
           byte altRainbowIndex = random(0, 13);
           analogWrite(REDPIN, colorArray[altRainbowIndex]->getRed());
@@ -144,6 +143,9 @@ class Color
           analogWrite(GREENPIN, 0);
           analogWrite(BLUEPIN, 0);
           delay(STROBESPEED);
+          prevRed = colorArray[altRainbowIndex]->getRed();
+          prevGreen = colorArray[altRainbowIndex]->getGreen();
+          prevBlue = colorArray[altRainbowIndex]->getBlue();
         }
       }
       //Strobe white light
@@ -157,6 +159,9 @@ class Color
           analogWrite(GREENPIN, 0);
           analogWrite(BLUEPIN, 0);
           delay(STROBESPEED);
+          prevRed = 0;
+          prevGreen = 0;
+          prevBlue = 0;
         }
       }
     }
@@ -200,18 +205,6 @@ void setup()
   prevGreen = rainbow[rainbowIndex]->getGreen();
   prevBlue = rainbow[rainbowIndex]->getBlue();
 
-  /*
-    Serial.print("base color is ");
-    Serial.println(rainbow[rainbowIndex]->getName());
-    Serial.print("red is ");
-    Serial.println(prevRed);
-    Serial.print("green is ");
-    Serial.println(prevGreen);
-    Serial.print("blue is ");
-    Serial.println(prevBlue);
-    Serial.println();
-  */
-
   //Display that color to the LED strip
   analogWrite(REDPIN, prevRed);
   analogWrite(GREENPIN, prevGreen);
@@ -237,36 +230,14 @@ void loop()
     newGreen = rainbow[rainbowIndex]->getGreen();
     newBlue = rainbow[rainbowIndex]->getBlue();
 
-    /*
-      Serial.print("rainbow index ");
-      Serial.println(rainbowIndex);
-      Serial.print("color effect prob ");
-      Serial.println(colorEffectProb);
-      Serial.print("fade prob ");
-      Serial.println(fadeProb);
-      Serial.println();
-
-      Serial.print("base color is ");
-      Serial.println(rainbow[rainbowIndex]->getName());
-      Serial.print("red is ");
-      Serial.println(newRed);
-      Serial.print("green is ");
-      Serial.println(newGreen);
-      Serial.print("blue is ");
-      Serial.println(newBlue);
-      Serial.println();
-    */
-
     //Original base color (40% chance)
     if (1 <= colorEffectProb && colorEffectProb <= 40) {
       //Fade transition (25% chance)
       if (1 <= fadeProb && fadeProb <= 25) {
-        //Serial.println("base color fade");
         Color::fade(newRed, prevRed, newGreen, prevGreen, newBlue, prevBlue);
       }
       //Jump transition (75% chance)
       else {
-        //Serial.println("base color jump");
         Color::jump(newRed, newGreen, newBlue);
       }
     }
@@ -286,18 +257,16 @@ void loop()
 
       //Fade transition (25% chance)
       if (1 <= fadeProb && fadeProb <= 25) {
-        //Serial.println("saturation fade final values");
         Color::fade(newRed, prevRed, newGreen, prevGreen, newBlue, prevBlue);
       }
       //Jump transition (75% chance)
       else {
-        //Serial.println("saturation jump final value");
         Color::jump(newRed, newGreen, newBlue);
       }
     }
 
     //Lightness chance to base color (25% chance)
-    else if(66 <= colorEffectProb && colorEffectProb <= 90){
+    else if (66 <= colorEffectProb && colorEffectProb <= 90) {
       //calculate random amount of color shift
       long changeVal = random(0, 101);
       //calculate direction of shift, up or down
@@ -325,17 +294,15 @@ void loop()
       }
       //Fade transition (25% chance)
       if (1 <= fadeProb && fadeProb <= 25) {
-        //Serial.println("lightness fade final values");
         Color::fade(newRed, prevRed, newGreen, prevGreen, newBlue, prevBlue);
       }
       //Jump transition (75% chance)
       else {
-        //Serial.println("lightness jump final values");
         Color::jump(newRed, newGreen, newBlue);
       }
     }
-    //10% Chance of strobing 
-    else{
+    //10% Chance of strobing
+    else {
       Color::strobe(rainbow);
     }
     //How long to wait before restarting the loop
@@ -348,15 +315,26 @@ void loop()
       prevRed -= FADEOUTINC;
       analogWrite(REDPIN, prevRed);
     }
+    else if ((prevRed - FADEOUTINC < 0)) {
+      prevRed = 0;
+      analogWrite(REDPIN, prevRed);
+    }
     if ((prevGreen - FADEOUTINC) >= 0) {
       prevGreen -= FADEOUTINC;
+      analogWrite(GREENPIN, prevGreen);
+    }
+    else if ((prevGreen - FADEOUTINC < 0)) {
+      prevGreen = 0;
       analogWrite(GREENPIN, prevGreen);
     }
     if ((prevBlue - FADEOUTINC) >= 0) {
       prevBlue -= FADEOUTINC;
       analogWrite(BLUEPIN, prevBlue);
     }
-    //Serial.println("off");
+    else if ((prevBlue - FADEOUTINC < 0)) {
+      prevBlue = 0;
+      analogWrite(BLUEPIN, prevBlue);
+    }
     delay(DELAY);
   }
 
