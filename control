@@ -1,14 +1,16 @@
 //This file contains code to randomly control the change of an RGB LED light strip using a sound impact sensor
-
+//Defines the pins on the arduino to what they control
 #define REDPIN 5
 #define GREENPIN 6
 #define BLUEPIN 3
 #define SOUNDPIN 7
 
+//Change these values to change the response of the LEDs
 #define FADESTEPS 10
-#define FADERATE 5
+#define FADERATE 3
+#define FADEOUTINC 20
+#define DELAY 10
 
-#define DELAY 5
 
 //Declare global variables
 long rainbowIndex;
@@ -23,17 +25,21 @@ byte newRed;
 byte newGreen;
 byte newBlue;
 
+boolean sound;
+
 //Define a color class to hold RGB values of each color
 class Color
 {
     byte redVal;
     byte greenVal;
     byte blueVal;
+    String colorName;
 
     //constructor
   public:
-    Color(byte red, byte green, byte blue)
+    Color(String nameIn, byte red, byte green, byte blue)
     {
+      colorName = nameIn;
       redVal = red;
       greenVal = green;
       blueVal = blue;
@@ -48,6 +54,9 @@ class Color
     }
     byte getBlue() {
       return blueVal;
+    }
+    String getName() {
+      return colorName;
     }
     /*Static method to fade from one color to the next
        Parameters: r1 - new value of red, r2 - old value of red
@@ -65,6 +74,17 @@ class Color
         r2 += redIncrement;
         g2 += greenIncrement;
         b2 += blueIncrement;
+
+        /*
+          Serial.print("incremental red is ");
+          Serial.println(r2);
+          Serial.print("incremental green is ");
+          Serial.println(g2);
+          Serial.print("incremental blue is ");
+          Serial.println(b2);
+          Serial.println();
+        */
+
         analogWrite(REDPIN, r2);
         analogWrite(GREENPIN, g2);
         analogWrite(BLUEPIN, b2);
@@ -84,6 +104,17 @@ class Color
       analogWrite(REDPIN, r);
       analogWrite(GREENPIN, g);
       analogWrite(BLUEPIN, b);
+
+      /*
+        Serial.print("red is ");
+        Serial.println(r);
+        Serial.print("green is ");
+        Serial.println(g);
+        Serial.print("blue is ");
+        Serial.println(b);
+        Serial.println();
+      */
+
       //Update global variables
       prevRed = r;
       prevGreen = g;
@@ -92,8 +123,23 @@ class Color
 
 }; //End class declaration
 
-//Declare array
-Color *rainbow[] = {};
+//Create the 13 Primary Hues which all other colors will be based off of.
+Color* red = new Color("red", 255, 0, 0);
+Color* orange = new Color("orange", 255, 128, 0);
+Color* yellow = new Color("yellow", 255, 255, 0);
+Color* lightGreen = new Color("light green", 128, 255, 0);
+Color* green = new Color("green", 0, 255, 0);
+Color* blueGreen = new Color("blue green", 0, 255, 128);
+Color* cyan = new Color("cyan", 0, 255, 255);
+Color* lightBlue = new Color("lightBlue", 0, 128, 255);
+Color* blue = new Color("blue", 0, 0, 255);
+Color* purple = new Color("purple", 128, 0, 255);
+Color* pink = new Color("pink", 255, 0, 255);
+Color* maroon = new Color("maroon", 255, 0, 128);
+Color* white = new Color("white", 255, 255, 255);
+
+//Create array of all the colors
+Color *rainbow[] = {red, orange, yellow, lightGreen, green, blueGreen, cyan, lightBlue, blue, purple, pink, maroon, white};
 
 //Runs at the power on of the arduino, runs once
 void setup()
@@ -104,23 +150,7 @@ void setup()
   pinMode(GREENPIN, OUTPUT);
   pinMode(BLUEPIN, OUTPUT);
 
-  //Create the 13 Primary Hues which all other colors will be based off of.
-  Color* red = new Color(255, 0, 0);
-  Color* orange = new Color(255, 128, 0);
-  Color* yellow = new Color(255, 255, 0);
-  Color* lightGreen = new Color(128, 255, 0);
-  Color* green = new Color(0, 255, 0);
-  Color* blueGreen = new Color(0, 255, 128);
-  Color* cyan = new Color(0, 255, 255);
-  Color* lightBlue = new Color(0, 128, 255);
-  Color* blue = new Color(0, 0, 255);
-  Color* purple = new Color(128, 0, 255);
-  Color* pink = new Color(255, 0, 255);
-  Color* maroon = new Color(255, 0, 128);
-  Color* white = new Color(255, 255, 255);
-
-  //Create array of all the colors
-  Color *rainbow[] = {red, orange, yellow, lightGreen, green, blueGreen, cyan, lightBlue, blue, purple, pink, maroon, white};
+  Serial.begin(9600);
 
   //Randomly pick an index of the rainbow to start with
   rainbowIndex = random(0, 13);
@@ -129,6 +159,18 @@ void setup()
   prevRed = rainbow[rainbowIndex]->getRed();
   prevGreen = rainbow[rainbowIndex]->getGreen();
   prevBlue = rainbow[rainbowIndex]->getBlue();
+
+  /*
+    Serial.print("base color is ");
+    Serial.println(rainbow[rainbowIndex]->getName());
+    Serial.print("red is ");
+    Serial.println(prevRed);
+    Serial.print("green is ");
+    Serial.println(prevGreen);
+    Serial.print("blue is ");
+    Serial.println(prevBlue);
+    Serial.println();
+  */
 
   //Display that color to the LED strip
   analogWrite(REDPIN, prevRed);
@@ -141,33 +183,56 @@ void setup()
 void loop()
 {
   //Value which determines if the sound is on or off
-  boolean sound = digitalRead(SOUNDPIN);
+  sound = digitalRead(SOUNDPIN);
+
   //If the sensor registers sound
   if (sound == true) {
     //Generate new random value for the next color, which color effect, and the fade transition
     rainbowIndex = random(0, 13);
     colorEffectProb = random(1, 101);
     fadeProb = random(1, 101);
-    
+
     //Update global variables
     newRed = rainbow[rainbowIndex]->getRed();
     newGreen = rainbow[rainbowIndex]->getGreen();
     newBlue = rainbow[rainbowIndex]->getBlue();
 
+    /*
+      Serial.print("rainbow index ");
+      Serial.println(rainbowIndex);
+      Serial.print("color effect prob ");
+      Serial.println(colorEffectProb);
+      Serial.print("fade prob ");
+      Serial.println(fadeProb);
+      Serial.println();
+
+      Serial.print("base color is ");
+      Serial.println(rainbow[rainbowIndex]->getName());
+      Serial.print("red is ");
+      Serial.println(newRed);
+      Serial.print("green is ");
+      Serial.println(newGreen);
+      Serial.print("blue is ");
+      Serial.println(newBlue);
+      Serial.println();
+    */
+
     //Original base color (50% chance)
-    if (1 <= colorEffectProb <= 50) {
+    if (1 <= colorEffectProb && colorEffectProb <= 50) {
       //Fade transition (50% chance)
-      if (1 <= fadeProb <= 50) {
+      if (1 <= fadeProb && fadeProb <= 25) {
+        //Serial.println("base color fade");
         Color::fade(newRed, prevRed, newGreen, prevGreen, newBlue, prevBlue);
       }
       //Jump transition (50% chance)
       else {
+        //Serial.println("base color jump");
         Color::jump(newRed, newGreen, newBlue);
       }
     }
 
     //Saturation change to base color(25% chance)
-    else if (51 <= colorEffectProb <= 75) {
+    else if (51 <= colorEffectProb && colorEffectProb <= 75) {
       //calculate random amount of color shift
       long changeVal = random(0, 101);
 
@@ -180,11 +245,13 @@ void loop()
       if (newBlue == 0) newBlue += changeVal;
 
       //Fade transition (50% chance)
-      if (1 <= fadeProb <= 50) {
+      if (1 <= fadeProb && fadeProb <= 25) {
+        //Serial.println("saturation fade final values");
         Color::fade(newRed, prevRed, newGreen, prevGreen, newBlue, prevBlue);
       }
       //Jump transition (50% chance)
       else {
+        //Serial.println("saturation jump final value");
         Color::jump(newRed, newGreen, newBlue);
       }
     }
@@ -217,11 +284,13 @@ void loop()
         else newBlue += changeVal;
       }
       //Fade transition (50% chance)
-      if (1 <= fadeProb <= 50) {
+      if (1 <= fadeProb && fadeProb <= 25) {
+        //Serial.println("lightness fade final values");
         Color::fade(newRed, prevRed, newGreen, prevGreen, newBlue, prevBlue);
       }
       //Jump transition (50% chance)
       else {
+        //Serial.println("lightness jump final values");
         Color::jump(newRed, newGreen, newBlue);
       }
     }
@@ -230,9 +299,22 @@ void loop()
   }
 
   //Case for if there is no sound signal
+
   else {
-    digitalWrite(REDPIN, 0);
-    digitalWrite(GREENPIN, 0);
-    digitalWrite(BLUEPIN, 0);
+    if ((prevRed - FADEOUTINC) >= 0 ) {
+      prevRed -= FADEOUTINC;
+      analogWrite(REDPIN, prevRed);
+    }
+    if ((prevGreen - FADEOUTINC) >= 0) {
+      prevGreen -= FADEOUTINC;
+      analogWrite(GREENPIN, prevGreen);
+    }
+    if ((prevBlue - FADEOUTINC) >= 0) {
+      prevBlue -= FADEOUTINC;
+      analogWrite(BLUEPIN, prevBlue);
+    }
+    //Serial.println("off");
+    delay(DELAY);
   }
+
 }
