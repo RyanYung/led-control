@@ -17,6 +17,11 @@
 
 #define DELAY 10 //Overll delay for the program
 
+#define BASECOLORODDS 40 //Upper parameter for base color odds
+#define SATCOLORODDS 65 //Upper parameter for saturation color odds
+#define LITECOLORODDS 90 //Upper parameter for lightness color odds 
+
+
 /*  Debugging print statements
 
       Serial.print("red is ");
@@ -231,7 +236,7 @@ void loop()
     newBlue = rainbow[rainbowIndex]->getBlue();
 
     //Original base color (40% chance)
-    if (1 <= colorEffectProb && colorEffectProb <= 40) {
+    if (1 <= colorEffectProb && colorEffectProb <= BASECOLORODDS) {
       //Fade transition (25% chance)
       if (1 <= fadeProb && fadeProb <= 25) {
         Color::fade(newRed, prevRed, newGreen, prevGreen, newBlue, prevBlue);
@@ -243,7 +248,7 @@ void loop()
     }
 
     //Saturation change to base color(25% chance)
-    else if (41 <= colorEffectProb && colorEffectProb <= 65) {
+    else if ((BASECOLORODDS + 1) <= colorEffectProb && colorEffectProb <= SATCOLORODDS) {
       //calculate random amount of color shift
       long changeVal = random(0, 101);
 
@@ -266,7 +271,7 @@ void loop()
     }
 
     //Lightness chance to base color (25% chance)
-    else if (66 <= colorEffectProb && colorEffectProb <= 90) {
+    else if ((SATCOLORODDS + 1) <= colorEffectProb && colorEffectProb <= LITECOLORODDS) {
       //calculate random amount of color shift
       long changeVal = random(0, 101);
       //calculate direction of shift, up or down
