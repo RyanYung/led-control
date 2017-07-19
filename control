@@ -1,4 +1,5 @@
 //This file contains code to randomly control the change of an RGB LED light strip using a sound impact sensor
+
 //Defines the pins on the arduino to what they control
 #define REDPIN 5
 #define GREENPIN 6
@@ -6,10 +7,15 @@
 #define SOUNDPIN 7
 
 //Change these values to change the response of the LEDs
-#define FADESTEPS 10
-#define FADERATE 3
-#define FADEOUTINC 20
-#define DELAY 10
+#define FADESTEPS 10 //How many incremental steps during the fade transition
+#define FADERATE 5   //Delay between each color of the fade
+
+#define FADEOUTINC 20 //Incremental decrease of brightness when no sound is registered
+
+#define STROBECOUNT 10  //How many times the light will strobe
+#define STROBESPEED 200 //Delay between strobes
+
+#define DELAY 10 //Overll delay for the program
 
 
 //Declare global variables
@@ -26,6 +32,7 @@ byte newGreen;
 byte newBlue;
 
 boolean sound;
+
 
 //Define a color class to hold RGB values of each color
 class Color
@@ -120,6 +127,39 @@ class Color
       prevGreen = g;
       prevBlue = b;
     }
+    //Static method to rapidly change colors
+    static void strobe(Color* colorArray[]) {
+      //Determines which type of strobe it will be 
+      byte strobeEffectValue = random(1, 101);
+      
+      //Strobe various colors of the rainbow
+      if ( 1 <= strobeEffectValue <= 75) {
+        for (byte i = 0; i < STROBECOUNT; i++) {
+          byte altRainbowIndex = random(0, 13);
+          analogWrite(REDPIN, colorArray[altRainbowIndex]->getRed());
+          analogWrite(GREENPIN, colorArray[altRainbowIndex]->getGreen());
+          analogWrite(BLUEPIN, colorArray[altRainbowIndex]->getBlue());
+          delay(STROBESPEED);
+          analogWrite(REDPIN, 0);
+          analogWrite(GREENPIN, 0);
+          analogWrite(BLUEPIN, 0);
+          delay(STROBESPEED);
+        }
+      }
+      //Strobe white light
+      else {
+        for (byte i = 0; i < STROBECOUNT; i++) {
+          analogWrite(REDPIN, 255);
+          analogWrite(GREENPIN, 255);
+          analogWrite(BLUEPIN, 255);
+          delay(STROBESPEED);
+          analogWrite(REDPIN, 0);
+          analogWrite(GREENPIN, 0);
+          analogWrite(BLUEPIN, 0);
+          delay(STROBESPEED);
+        }
+      }
+    }
 
 }; //End class declaration
 
@@ -131,7 +171,7 @@ Color* lightGreen = new Color("light green", 128, 255, 0);
 Color* green = new Color("green", 0, 255, 0);
 Color* blueGreen = new Color("blue green", 0, 255, 128);
 Color* cyan = new Color("cyan", 0, 255, 255);
-Color* lightBlue = new Color("lightBlue", 0, 128, 255);
+Color* lightBlue = new Color("light blue", 0, 128, 255);
 Color* blue = new Color("blue", 0, 0, 255);
 Color* purple = new Color("purple", 128, 0, 255);
 Color* pink = new Color("pink", 255, 0, 255);
@@ -217,14 +257,14 @@ void loop()
       Serial.println();
     */
 
-    //Original base color (50% chance)
-    if (1 <= colorEffectProb && colorEffectProb <= 50) {
-      //Fade transition (50% chance)
+    //Original base color (40% chance)
+    if (1 <= colorEffectProb && colorEffectProb <= 40) {
+      //Fade transition (25% chance)
       if (1 <= fadeProb && fadeProb <= 25) {
         //Serial.println("base color fade");
         Color::fade(newRed, prevRed, newGreen, prevGreen, newBlue, prevBlue);
       }
-      //Jump transition (50% chance)
+      //Jump transition (75% chance)
       else {
         //Serial.println("base color jump");
         Color::jump(newRed, newGreen, newBlue);
@@ -232,7 +272,7 @@ void loop()
     }
 
     //Saturation change to base color(25% chance)
-    else if (51 <= colorEffectProb && colorEffectProb <= 75) {
+    else if (41 <= colorEffectProb && colorEffectProb <= 65) {
       //calculate random amount of color shift
       long changeVal = random(0, 101);
 
@@ -244,12 +284,12 @@ void loop()
       if (newGreen == 0) newGreen += changeVal;
       if (newBlue == 0) newBlue += changeVal;
 
-      //Fade transition (50% chance)
+      //Fade transition (25% chance)
       if (1 <= fadeProb && fadeProb <= 25) {
         //Serial.println("saturation fade final values");
         Color::fade(newRed, prevRed, newGreen, prevGreen, newBlue, prevBlue);
       }
-      //Jump transition (50% chance)
+      //Jump transition (75% chance)
       else {
         //Serial.println("saturation jump final value");
         Color::jump(newRed, newGreen, newBlue);
@@ -257,7 +297,7 @@ void loop()
     }
 
     //Lightness chance to base color (25% chance)
-    else {
+    else if(66 <= colorEffectProb && colorEffectProb <= 90){
       //calculate random amount of color shift
       long changeVal = random(0, 101);
       //calculate direction of shift, up or down
@@ -283,23 +323,26 @@ void loop()
         if (sign) newBlue -= changeVal;
         else newBlue += changeVal;
       }
-      //Fade transition (50% chance)
+      //Fade transition (25% chance)
       if (1 <= fadeProb && fadeProb <= 25) {
         //Serial.println("lightness fade final values");
         Color::fade(newRed, prevRed, newGreen, prevGreen, newBlue, prevBlue);
       }
-      //Jump transition (50% chance)
+      //Jump transition (75% chance)
       else {
         //Serial.println("lightness jump final values");
         Color::jump(newRed, newGreen, newBlue);
       }
+    }
+    //10% Chance of strobing 
+    else{
+      Color::strobe(rainbow);
     }
     //How long to wait before restarting the loop
     delay(DELAY);
   }
 
   //Case for if there is no sound signal
-
   else {
     if ((prevRed - FADEOUTINC) >= 0 ) {
       prevRed -= FADEOUTINC;
