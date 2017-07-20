@@ -7,20 +7,28 @@
 #define SOUNDPIN 7
 
 //Change these values to change the response of the LEDs
-#define FADESTEPS 10 //How many incremental steps during the fade transition
-#define FADERATE 5   //Delay between each color of the fade
+#define FADEONSTEPS 10 //How many incremental steps during the fade into the new color (10 steps makes it smooth, 70ms x10 gives it a good fade)
+#define FADEONDELAY 70   //Delay between each color of the fade
 
-#define FADEOUTINC 10 //Incremental decrease of brightness when no sound is registered
+#define FADEOFFSTEPS 10 //How many incremental steps to turn off the led before the new color comes on (same as above)
+#define FADEOFFDELAY 70 //Delay between each step off 
 
-#define STROBECOUNT 7  //How many times the light will strobe
-#define STROBESPEED 150 //Delay between strobes
+#define JUMPDELAY 350 //How long color stays before changing (250+ is good)
+
+#define OFFINC 30 //Incremental decrease of brightness when no sound is registered (30 and 50ms are good fade out values so it doesnt look like a toggle)
+#define OFFDELAY 50 //Delay for fading out lights when there is no sound
+
+#define STROBECOUNT 8  //How many times the light will strobe (these dont really matter yolo it)
+#define STROBESPEED 75 //Delay between strobes
+
+#define BASECOLORODDS 30 //Upper parameter for base color odds
+#define SATCOLORODDS 60//Upper parameter for saturation color odds
+#define LITECOLORODDS 98 //Upper parameter for lightness color odds 
+
+#define FADEODDS 25 //Upper parameter for fade transition odds 
+#define COLORSTROBEODDS 30 //Odds of strobe being colors 
 
 #define DELAY 10 //Overll delay for the program
-
-#define BASECOLORODDS 40 //Upper parameter for base color odds
-#define SATCOLORODDS 65 //Upper parameter for saturation color odds
-#define LITECOLORODDS 90 //Upper parameter for lightness color odds 
-
 
 /*  Debugging print statements
 
@@ -66,7 +74,7 @@ class Color
     byte blueVal;
     String colorName;
 
-  //constructor
+    //constructor
   public:
     Color(String nameIn, byte red, byte green, byte blue)
     {
@@ -96,20 +104,73 @@ class Color
     */
     static void fade(byte r1, byte r2, byte g1, byte g2, byte b1, byte b2) {
       //Calculate step size for the fade
-      int redIncrement = (r1 - r2) / FADESTEPS;
-      int greenIncrement = (g1 - g2) / FADESTEPS;
-      int blueIncrement = (b1 - b2) / FADESTEPS;
+      //int redIncrement = (r1 - r2) / FADEONSTEPS;
+      //int greenIncrement = (g1 - g2) / FADEONSTEPS;
+      //int blueIncrement = (b1 - b2) / FADEONSTEPS;
+
+      int redIncrement = r1 / FADEONSTEPS;
+      int greenIncrement = g1 / FADEONSTEPS;
+      int blueIncrement = b1 / FADEONSTEPS;
+
+      int redOffInc = r2 / FADEOFFSTEPS;
+      int greenOffInc = g2 / FADEOFFSTEPS;
+      int blueOffInc = b2 / FADEOFFSTEPS;
+      byte onRed = r2;
+      byte onGreen = g2;
+      byte onBlue = b2;
+      byte offRed = 0;
+      byte offGreen = 0;
+      byte offBlue = 0;
+
+      //This for loops fades the lights off 
+      for (byte i = 0; i < FADEOFFSTEPS; i++) {
+        if ((onRed - redOffInc) >= 0 ) {
+          onRed -= redOffInc;
+          analogWrite(REDPIN, onRed);
+        }
+        else if ((onRed - redOffInc < 0)) {
+          onRed = 0;
+          analogWrite(REDPIN, onRed);
+        }
+        if ((onGreen - greenOffInc) >= 0) {
+          onGreen -= greenOffInc;
+          analogWrite(GREENPIN, onGreen);
+        }
+        else if ((onGreen - greenOffInc < 0)) {
+          onGreen = 0;
+          analogWrite(GREENPIN, onGreen);
+        }
+        if ((onBlue - blueOffInc) >= 0) {
+          onBlue -= blueOffInc;
+          analogWrite(BLUEPIN, onBlue);
+        }
+        else if ((onBlue - blueOffInc < 0)) {
+          onBlue = 0;
+          analogWrite(BLUEPIN, onBlue);
+        }
+        delay(FADEOFFDELAY);
+      }
 
       //Loop through the steps to fade from one color to the other
-      for (byte i = 0; i < FADESTEPS; i++) {
-        r2 += redIncrement;
-        g2 += greenIncrement;
-        b2 += blueIncrement;
+      //Alternately this loop fades the lights on to the new color 
+      for (byte j = 0; j < FADEONSTEPS; j++) {
 
-        analogWrite(REDPIN, r2);
-        analogWrite(GREENPIN, g2);
-        analogWrite(BLUEPIN, b2);
-        delay(FADERATE);
+        offRed += redIncrement;
+        offGreen += greenIncrement;
+        offBlue += blueIncrement;
+
+        //r2 += redIncrement;
+        //g2 += greenIncrement;
+        //b2 += blueIncrement;
+
+        //analogWrite(REDPIN, r2);
+        //analogWrite(GREENPIN, g2);
+        //analogWrite(BLUEPIN, b2);
+
+        analogWrite(REDPIN, offRed);
+        analogWrite(GREENPIN, offGreen);
+        analogWrite(BLUEPIN, offBlue);
+        delay(FADEONDELAY);
       }
       //Update the global previous color values to the most recently displayed color
       prevRed = r1;
@@ -130,6 +191,7 @@ class Color
       prevRed = r;
       prevGreen = g;
       prevBlue = b;
+      delay(JUMPDELAY);
     }
     //Static method to rapidly change colors
     static void strobe(Color* colorArray[]) {
@@ -137,7 +199,7 @@ class Color
       byte strobeEffectValue = random(1, 101);
 
       //Strobe various colors of the rainbow
-      if ( 1 <= strobeEffectValue && strobeEffectValue <= 50) {
+      if ( 1 <= strobeEffectValue && strobeEffectValue <= COLORSTROBEODDS) {
         for (byte i = 0; i < STROBECOUNT; i++) {
           byte altRainbowIndex = random(0, 13);
           analogWrite(REDPIN, colorArray[altRainbowIndex]->getRed());
@@ -235,19 +297,19 @@ void loop()
     newGreen = rainbow[rainbowIndex]->getGreen();
     newBlue = rainbow[rainbowIndex]->getBlue();
 
-    //Original base color (40% chance)
+    //Original base color
     if (1 <= colorEffectProb && colorEffectProb <= BASECOLORODDS) {
       //Fade transition (25% chance)
-      if (1 <= fadeProb && fadeProb <= 25) {
+      if (1 <= fadeProb && fadeProb <= FADEODDS) {
         Color::fade(newRed, prevRed, newGreen, prevGreen, newBlue, prevBlue);
       }
-      //Jump transition (75% chance)
+      //Jump transition
       else {
         Color::jump(newRed, newGreen, newBlue);
       }
     }
 
-    //Saturation change to base color(25% chance)
+    //Saturation change to base color
     else if ((BASECOLORODDS + 1) <= colorEffectProb && colorEffectProb <= SATCOLORODDS) {
       //calculate random amount of color shift
       long changeVal = random(0, 101);
@@ -260,17 +322,17 @@ void loop()
       if (newGreen == 0) newGreen += changeVal;
       if (newBlue == 0) newBlue += changeVal;
 
-      //Fade transition (25% chance)
-      if (1 <= fadeProb && fadeProb <= 25) {
+      //Fade transition
+      if (1 <= fadeProb && fadeProb <= FADEODDS) {
         Color::fade(newRed, prevRed, newGreen, prevGreen, newBlue, prevBlue);
       }
-      //Jump transition (75% chance)
+      //Jump transition
       else {
         Color::jump(newRed, newGreen, newBlue);
       }
     }
 
-    //Lightness chance to base color (25% chance)
+    //Lightness chance to base color
     else if ((SATCOLORODDS + 1) <= colorEffectProb && colorEffectProb <= LITECOLORODDS) {
       //calculate random amount of color shift
       long changeVal = random(0, 101);
@@ -297,16 +359,16 @@ void loop()
         if (sign) newBlue -= changeVal;
         else newBlue += changeVal;
       }
-      //Fade transition (25% chance)
-      if (1 <= fadeProb && fadeProb <= 25) {
+      //Fade transition
+      if (1 <= fadeProb && fadeProb <= FADEODDS) {
         Color::fade(newRed, prevRed, newGreen, prevGreen, newBlue, prevBlue);
       }
-      //Jump transition (75% chance)
+      //Jump transition
       else {
         Color::jump(newRed, newGreen, newBlue);
       }
     }
-    //10% Chance of strobing
+    //Strobing
     else {
       Color::strobe(rainbow);
     }
@@ -316,31 +378,32 @@ void loop()
 
   //Case for if there is no sound signal
   else {
-    if ((prevRed - FADEOUTINC) >= 0 ) {
-      prevRed -= FADEOUTINC;
+    if ((prevRed - OFFINC) >= 0 ) {
+      prevRed -= OFFINC;
       analogWrite(REDPIN, prevRed);
     }
-    else if ((prevRed - FADEOUTINC < 0)) {
+    else if ((prevRed - OFFINC < 0)) {
       prevRed = 0;
       analogWrite(REDPIN, prevRed);
     }
-    if ((prevGreen - FADEOUTINC) >= 0) {
-      prevGreen -= FADEOUTINC;
+    if ((prevGreen - OFFINC) >= 0) {
+      prevGreen -= OFFINC;
       analogWrite(GREENPIN, prevGreen);
     }
-    else if ((prevGreen - FADEOUTINC < 0)) {
+    else if ((prevGreen - OFFINC < 0)) {
       prevGreen = 0;
       analogWrite(GREENPIN, prevGreen);
     }
-    if ((prevBlue - FADEOUTINC) >= 0) {
-      prevBlue -= FADEOUTINC;
+    if ((prevBlue - OFFINC) >= 0) {
+      prevBlue -= OFFINC;
       analogWrite(BLUEPIN, prevBlue);
     }
-    else if ((prevBlue - FADEOUTINC < 0)) {
+    else if ((prevBlue - OFFINC < 0)) {
       prevBlue = 0;
       analogWrite(BLUEPIN, prevBlue);
     }
-    delay(DELAY);
+    
+    delay(OFFDELAY);
   }
 
 }
