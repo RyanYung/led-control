@@ -7,18 +7,18 @@
 #define SOUNDPIN 7
 
 //Change these values to change the response of the LEDs
-#define FADEONSTEPS 10 //How many incremental steps during the fade into the new color (10 steps makes it smooth, 70ms x10 gives it a good fade)
+#define FADEONSTEPS 10 //How many incremental steps during the fade into the new color 
 #define FADEONDELAY 30   //Delay between each color of the fade
 
-#define FADEOFFSTEPS 10 //How many incremental steps to turn off the led before the new color comes on (same as above)
+#define FADEOFFSTEPS 10 //How many incremental steps to turn off the led before the new color comes on 
 #define FADEOFFDELAY 30 //Delay between each step off 
 
 #define JUMPDELAY 250 //How long color stays before changing (250+ is good)
 
-#define OFFINC 30 //Incremental decrease of brightness when no sound is registered (30 and 50ms are good fade out values so it doesnt look like a toggle)
+#define OFFINC 30 //Incremental decrease of brightness when no sound is registered 
 #define OFFDELAY 50 //Delay for fading out lights when there is no sound
 
-#define STROBECOUNT 8  //How many times the light will strobe (these dont really matter yolo it)
+#define STROBECOUNT 8  //How many times the light will strobe
 #define STROBESPEED 80 //Delay between strobes
 
 #define BASECOLORODDS 350 //Upper parameter for base color odds (1-1000)
@@ -74,7 +74,7 @@ class Color
     byte blueVal;
     String colorName;
 
-    //constructor
+  //constructor
   public:
     Color(String nameIn, byte red, byte green, byte blue)
     {
@@ -104,10 +104,7 @@ class Color
     */
     static void fade(byte r1, byte r2, byte g1, byte g2, byte b1, byte b2) {
       //Calculate step size for the fade
-      //int redIncrement = (r1 - r2) / FADEONSTEPS;
-      //int greenIncrement = (g1 - g2) / FADEONSTEPS;
-      //int blueIncrement = (b1 - b2) / FADEONSTEPS;
-
+     
       int redIncrement = r1 / FADEONSTEPS;
       int greenIncrement = g1 / FADEONSTEPS;
       int blueIncrement = b1 / FADEONSTEPS;
@@ -159,15 +156,7 @@ class Color
         offRed += redIncrement;
         offGreen += greenIncrement;
         offBlue += blueIncrement;
-
-        //r2 += redIncrement;
-        //g2 += greenIncrement;
-        //b2 += blueIncrement;
-
-        //analogWrite(REDPIN, r2);
-        //analogWrite(GREENPIN, g2);
-        //analogWrite(BLUEPIN, b2);
-
+        
         analogWrite(REDPIN, offRed);
         analogWrite(GREENPIN, offGreen);
         analogWrite(BLUEPIN, offBlue);
@@ -178,6 +167,7 @@ class Color
       prevGreen = g1;
       prevBlue = b1;
     }
+    
     /*Static method to jump from one color to the next
          Parameters: r - new value of red
                      g - new value of green
@@ -194,6 +184,7 @@ class Color
       prevBlue = b;
       delay(JUMPDELAY);
     }
+    
     //Static method to rapidly change colors
     static void strobe(Color* colorArray[]) {
       //Determines which type of strobe it will be
@@ -404,11 +395,7 @@ void loop()
       prevBlue = 0;
       analogWrite(BLUEPIN, prevBlue);
     }
-    
-    //analogWrite(REDPIN, 0);
-    //analogWrite(GREENPIN, 0);
-    //analogWrite(BLUEPIN, 0);
-    
+        
     delay(OFFDELAY);
   }
 
