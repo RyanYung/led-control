@@ -5,10 +5,10 @@ This project contains code to run on an arduino connected to a external breadboa
 To create an elegant solution for dynamic lighting which responds to the music which is playing. 1
 
 ## Acknowledgments
-EyevisionProductions for the circuit diagram.
+EyevisionProductions for the circuit diagram.  
 My brother Tyler for critiquing the transition speeds and timings. 
 
 ## Info
-Circuit Diagram can be found here: https://imgur.com/a/MIEhj
+Circuit Diagram can be found here: https://imgur.com/a/MIEhj  
 Demo video can be found here: https://youtu.be/7bMdEcFJ4Nk
 
